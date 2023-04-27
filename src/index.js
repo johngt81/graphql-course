@@ -21,12 +21,62 @@ const users = [
   },
 ];
 
+const posts = [
+  {
+    id: "10",
+    title: "Graphql 101",
+    body: "Book about graphql",
+    published: true,
+    author: "1",
+  },
+  {
+    id: "11",
+    title: "Graphql V2",
+    body: "Book about graphql",
+    published: true,
+    author: "1",
+  },
+  {
+    id: "12",
+    title: "Graphql 201",
+    body: "ChatGPT",
+    published: true,
+    author: "2",
+  },
+];
+
+const comments = [
+  {
+    id: "102",
+    text: "Great book!",
+    author: "2",
+    post: "10",
+  },
+  {
+    id: "103",
+    text: "Very hard to understand",
+    author: "1",
+    post: "10",
+  },
+  {
+    id: "104",
+    text: "I was able to complete all exercises",
+    author: "2",
+    post: "11",
+  },
+  {
+    id: "105",
+    text: `Can't wait for second version `,
+    author: "1",
+    post: "11",
+  },
+];
 // Type definitions (schema)
 const typeDefs = `
     type Query {
-        grades: [Int!]!
-        greeting(name: String): String!
         users(query: String): [User!]!
+        posts(query: String): [Post!]!
+        comments: [Comment!]!
         me: User!
         post: Post!
     }
@@ -36,6 +86,8 @@ const typeDefs = `
         name: String!
         email: String!
         age: Int
+        posts: [Post!]!
+        comments: [Comment!]!
     }
 
     type Post {
@@ -43,6 +95,15 @@ const typeDefs = `
         title:  String!
         body: String!
         published: Boolean!
+        author: User!
+        comments: [Comment!]
+    }
+
+    type Comment {
+      id: ID!
+      text: String!
+      author: User!
+      post: Post!
     }
 `;
 
@@ -51,22 +112,20 @@ const resolvers = {
   Query: {
     users(parent, args, ctx, info) {
       if (!args.query) {
-        return users;
+        return ctx.db.users;
       }
 
-      return users.filter((user) => {
+      return ctx.db.users.filter((user) => {
         return user.name.toLowerCase().includes(args.query.toLowerCase());
       });
     },
-    grades() {
-      return [10, 20];
-    },
-    greeting(parent, args, context, info) {
-      if (args.name) {
-        return `Hello, ${args.name}`;
-      } else {
-        return "Hello";
+    posts(parent, args, ctx, info) {
+      if (!args.query) {
+        return ctx.db.posts;
       }
+    },
+    comments(parent, args, ctx, info) {
+      return ctx.db.comments;
     },
     me() {
       return {
@@ -85,6 +144,42 @@ const resolvers = {
       };
     },
   },
+  Post: {
+    author(parent, args, ctx, info) {
+      return ctx.db.users.find((user) => {
+        return user.id === parent.author;
+      });
+    },
+    comments(parent, args, ctx, info) {
+      return ctx.db.comments.filter((comment) => {
+        return comment.post === parent.id;
+      });
+    },
+  },
+  User: {
+    posts(parent, args, ctx, info) {
+      return ctx.db.posts.filter((post) => {
+        return post.author === parent.id;
+      });
+    },
+    comments(parent, args, ctx, info) {
+      return ctx.db.comments.filter((comment) => {
+        return comment.author === parent.id;
+      });
+    },
+  },
+  Comment: {
+    author(parent, args, ctx, info) {
+      return ctx.db.users.find((user) => {
+        return user.id === parent.author;
+      });
+    },
+    post(parent, args, ctx, info) {
+      return ctx.db.posts.find((post) => {
+        return post.id === parent.post;
+      });
+    },
+  },
 };
 
 const schema = createSchema({
@@ -92,7 +187,8 @@ const schema = createSchema({
   resolvers: resolvers,
 });
 
-const yoga = createYoga({ schema });
+const db = { users, posts, comments };
+const yoga = createYoga({ schema, context: { db } });
 
 const server = createServer(yoga);
 
