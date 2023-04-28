@@ -1,6 +1,7 @@
-// import myCurrentLocation from './myModule'
-import { GraphQLServer, createSchema, createYoga } from "graphql-yoga";
+import { GraphQLError } from "graphql";
+import { createSchema, createYoga } from "graphql-yoga";
 import { createServer } from "node:http";
+import { v4 as uuidv4 } from "uuid";
 
 const users = [
   {
@@ -81,6 +82,12 @@ const typeDefs = `
         post: Post!
     }
 
+    type Mutation {
+        createUser(email: String!, name: String!, age: Int): User!
+        createPost(title: String!, body: String!, published: Boolean!, author: ID!): Post!
+        createComment(text: String!, author: ID!, post: ID!): Comment!
+      }
+
     type User {
         id: ID!
         name: String!
@@ -142,6 +149,68 @@ const resolvers = {
         body: "",
         published: false,
       };
+    },
+  },
+  Mutation: {
+    createUser(parent, args, ctx, info) {
+      const emailTaken = ctx.db.users.some((user) => {
+        return user.email === args.email;
+      });
+
+      if (emailTaken) {
+        throw new GraphQLError("Email taken");
+      }
+
+      const user = {
+        id: uuidv4(),
+        name: args.name,
+        email: args.email,
+        age: args.age,
+      };
+
+      ctx.db.users.push(user);
+
+      return user;
+    },
+    createPost(parent, args, ctx, info) {
+      const userExists = ctx.db.users.some((user) => user.id === args.author);
+      if (!userExists) {
+        throw new GraphQLError("User not found");
+      }
+
+      const post = {
+        id: uuidv4(),
+        title: args.title,
+        body: args.body,
+        published: args.published,
+        author: args.author,
+      };
+
+      ctx.db.posts.push(post);
+      return post;
+    },
+    createComment(parent, args, ctx, info) {
+      const userExists = ctx.db.comments.some(
+        (comment) => comment.id === args.author
+      );
+      if (!userExists) {
+        throw new GraphQLError("User not found");
+      }
+
+      const postExists = ctx.db.posts.some((post) => post.id === args.post);
+      if (!postExists) {
+        throw new GraphQLError("Post not found");
+      }
+
+      const comment = {
+        id: uuidv4(),
+        text: args.text,
+        author: args.author,
+        post: args.post,
+      };
+      ctx.db.comments.push(comment);
+
+      return comment;
     },
   },
   Post: {

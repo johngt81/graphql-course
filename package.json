@@ -12,7 +12,8 @@
   "dependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
-    "graphql-yoga": "^3.9.1"
+    "graphql-yoga": "^3.9.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
