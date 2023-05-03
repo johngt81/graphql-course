@@ -77,45 +77,10 @@ const comments = [
 
 // Resolver
 const resolvers = {
-  Query: {
-    users(parent, args, ctx, info) {
-      if (!args.query) {
-        return ctx.db.users;
-      }
-
-      return ctx.db.users.filter((user) => {
-        return user.name.toLowerCase().includes(args.query.toLowerCase());
-      });
-    },
-    posts(parent, args, ctx, info) {
-      if (!args.query) {
-        return ctx.db.posts;
-      }
-    },
-    comments(parent, args, ctx, info) {
-      return ctx.db.comments;
-    },
-    me() {
-      return {
-        id: "1234",
-        name: "bryan",
-        email: "bryan@email.com",
-        age: 12,
-      };
-    },
-    post() {
-      return {
-        id: "0123",
-        title: "Graph",
-        body: "",
-        published: false,
-      };
-    },
-  },
   Mutation: {
     createUser(parent, args, ctx, info) {
       const emailTaken = ctx.db.users.some((user) => {
-        return user.email === args.email;
+        return user.email === args.data.email;
       });
 
       if (emailTaken) {
@@ -124,9 +89,9 @@ const resolvers = {
 
       const user = {
         id: uuidv4(),
-        name: args.name,
-        email: args.email,
-        age: args.age,
+        name: args.data.name,
+        email: args.data.email,
+        age: args.data.age,
       };
 
       ctx.db.users.push(user);
@@ -134,40 +99,44 @@ const resolvers = {
       return user;
     },
     createPost(parent, args, ctx, info) {
-      const userExists = ctx.db.users.some((user) => user.id === args.author);
+      const userExists = ctx.db.users.some(
+        (user) => user.id === args.data.author
+      );
       if (!userExists) {
         throw new GraphQLError("User not found");
       }
 
       const post = {
         id: uuidv4(),
-        title: args.title,
-        body: args.body,
-        published: args.published,
-        author: args.author,
+        title: args.data.title,
+        body: args.data.body,
+        published: args.data.published,
+        author: args.data.author,
       };
 
       ctx.db.posts.push(post);
       return post;
     },
     createComment(parent, args, ctx, info) {
-      const userExists = ctx.db.comments.some(
-        (comment) => comment.id === args.author
+      const userExists = ctx.db.users.some(
+        (user) => user.id === args.data.author
       );
       if (!userExists) {
         throw new GraphQLError("User not found");
       }
 
-      const postExists = ctx.db.posts.some((post) => post.id === args.post);
+      const postExists = ctx.db.posts.some(
+        (post) => post.id === args.data.post
+      );
       if (!postExists) {
         throw new GraphQLError("Post not found");
       }
 
       const comment = {
         id: uuidv4(),
-        text: args.text,
-        author: args.author,
-        post: args.post,
+        text: args.data.text,
+        author: args.data.author,
+        post: args.data.post,
       };
       ctx.db.comments.push(comment);
 

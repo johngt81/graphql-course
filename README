@@ -1,0 +1,7 @@
+npm install  
+
+Instalar los npm packages
+    babel-cli
+    babel-preset-env
+
+Crear un archivo .babelrc

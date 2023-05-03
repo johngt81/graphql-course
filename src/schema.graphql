@@ -7,14 +7,28 @@ type Query {
 }
 
 type Mutation {
-  createUser(email: String!, name: String!, age: Int): User!
-  createPost(
-    title: String!
-    body: String!
-    published: Boolean!
-    author: ID!
-  ): Post!
-  createComment(text: String!, author: ID!, post: ID!): Comment!
+  createUser(data: CreateUserInput!): User!
+  createPost(data: CreatePostInput!): Post!
+  createComment(data: CreateCommentInput!): Comment!
+}
+
+input CreateCommentInput {
+  text: String!
+  author: ID!
+  post: ID!
+}
+
+input CreatePostInput {
+  title: String!
+  body: String!
+  published: Boolean!
+  author: ID!
+}
+
+input CreateUserInput {
+  email: String!
+  name: String!
+  age: Int
 }
 
 type User {
