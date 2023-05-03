@@ -4,6 +4,11 @@ import { createServer } from "node:http";
 import { v4 as uuidv4 } from "uuid";
 import path from "path";
 import fs from "fs";
+import Comment from "./resolvers/Comment";
+import Mutation from "./resolvers/Mutation";
+import Post from "./resolvers/Post";
+import Query from "./resolvers/Query";
+import User from "./resolvers/User";
 
 const users = [
   {
@@ -75,115 +80,15 @@ const comments = [
   },
 ];
 
-// Resolver
-const resolvers = {
-  Mutation: {
-    createUser(parent, args, ctx, info) {
-      const emailTaken = ctx.db.users.some((user) => {
-        return user.email === args.data.email;
-      });
-
-      if (emailTaken) {
-        throw new GraphQLError("Email taken");
-      }
-
-      const user = {
-        id: uuidv4(),
-        name: args.data.name,
-        email: args.data.email,
-        age: args.data.age,
-      };
-
-      ctx.db.users.push(user);
-
-      return user;
-    },
-    createPost(parent, args, ctx, info) {
-      const userExists = ctx.db.users.some(
-        (user) => user.id === args.data.author
-      );
-      if (!userExists) {
-        throw new GraphQLError("User not found");
-      }
-
-      const post = {
-        id: uuidv4(),
-        title: args.data.title,
-        body: args.data.body,
-        published: args.data.published,
-        author: args.data.author,
-      };
-
-      ctx.db.posts.push(post);
-      return post;
-    },
-    createComment(parent, args, ctx, info) {
-      const userExists = ctx.db.users.some(
-        (user) => user.id === args.data.author
-      );
-      if (!userExists) {
-        throw new GraphQLError("User not found");
-      }
-
-      const postExists = ctx.db.posts.some(
-        (post) => post.id === args.data.post
-      );
-      if (!postExists) {
-        throw new GraphQLError("Post not found");
-      }
-
-      const comment = {
-        id: uuidv4(),
-        text: args.data.text,
-        author: args.data.author,
-        post: args.data.post,
-      };
-      ctx.db.comments.push(comment);
-
-      return comment;
-    },
-  },
-  Post: {
-    author(parent, args, ctx, info) {
-      return ctx.db.users.find((user) => {
-        return user.id === parent.author;
-      });
-    },
-    comments(parent, args, ctx, info) {
-      return ctx.db.comments.filter((comment) => {
-        return comment.post === parent.id;
-      });
-    },
-  },
-  User: {
-    posts(parent, args, ctx, info) {
-      return ctx.db.posts.filter((post) => {
-        return post.author === parent.id;
-      });
-    },
-    comments(parent, args, ctx, info) {
-      return ctx.db.comments.filter((comment) => {
-        return comment.author === parent.id;
-      });
-    },
-  },
-  Comment: {
-    author(parent, args, ctx, info) {
-      return ctx.db.users.find((user) => {
-        return user.id === parent.author;
-      });
-    },
-    post(parent, args, ctx, info) {
-      return ctx.db.posts.find((post) => {
-        return post.id === parent.post;
-      });
-    },
-  },
-};
-
 const schema = createSchema({
   typeDefs: fs.readFileSync(path.join(__dirname, "schema.graphql"), "utf-8"),
-  resolvers: resolvers,
+  resolvers: {
+    Comment,
+    Mutation,
+    Post,
+    Query,
+    User,
+  },
 });
 
 const db = { users, posts, comments };
