@@ -5,3 +5,7 @@ Instalar los npm packages
     babel-preset-env
 
 Crear un archivo .babelrc
+
+Declarar tipos, query y mutation en Schema graphQL
+
+Implementacion en resolvers
